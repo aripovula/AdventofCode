@@ -6,17 +6,15 @@ namespace Advent3
 {
   public class Advent5p2
   {
-    List<int> IntCode;
-    int nextInstructionStartPoint = 0;
     public string getUpdatedIntCode(string intCodeFromConsole, string inp)
     {
       int userInput = int.Parse(inp);
       int output = 0;
       List<int> instructionParams;
-      IntCode = getIntCode();
+      List<int> IntCode = getIntCode();
+      int nextInstructionStartPoint = 0;
       string nextInstruction;
       int operationCode;
-      int p1, p2, p3;
 
       while (nextInstructionStartPoint < IntCode.Count)
       {
@@ -30,34 +28,42 @@ namespace Advent3
 
         nextInstructionStartPoint += digitsQnty;
 
-        if (opCodeRequiresInputAtPosition()) IntCode[instructionParams[1]] = userInput;
+        int p1 = getParameterOneDependingOnMode();
+        int p2 = instructionParams.Count > 2 ? getParameterTwoDependingOnMode() : 0;
+        int p3 = instructionParams.Count > 3 ? instructionParams[3] : 0;
 
-        if (opCodeRequiresDisclosingOutput())
+        switch (OpCodes[operationCode - 1])
         {
-          output = IntCode[instructionParams[1]];
-          Console.WriteLine("output -  " + output);
-        }
-        if (instructionParams.Count > 2)
-        {
-          p1 = getParameterOneDependingOnMode();
-          p2 = getParameterTwoDependingOnMode();
-          if (opCodeRequiresToJumpIf_P1isNotZero()) nextInstructionStartPoint = p2;
-          if (opCodeRequiresToJumpIf_P1isZero()) nextInstructionStartPoint = p2;
-
-          p3 = instructionParams.Count > 3 ? instructionParams[3] : 0;
-          if (operationCode == 7 && instructionParams.Count > 3)
-            ifP1lessThanP2storeOneOtherwiseZeroAtPositionThree();
-
-          if (operationCode == 8 && instructionParams.Count > 3)
-          {
-            ifP1equalsP2storeOneOtherwiseZeroAtPositionThree();
-          }
-          if (operationCode < 3 && instructionParams.Count > 3)
-          {
-            if (opCodeRequiresInputAtP3sumOfP1nP2()) IntCode[p3] = p1 + p2;
-            if (opCodeRequiresInputAtP3productOfP1nP2()) IntCode[p3] = p1 * p2;
-          }
-
+          case "opCodeRequires__InputAtP3sumOfP1nP2":
+            IntCode[p3] = p1 + p2;
+            break;
+          case "opCodeRequires__InputAtP3productOfP1nP2":
+            IntCode[p3] = p1 * p2;
+            break;
+          case "opCodeRequires__InputAtPosition":
+            IntCode[instructionParams[1]] = userInput;
+            break;
+          case "opCodeRequires__DisclosingOutput":
+            output = IntCode[instructionParams[1]];
+            Console.WriteLine("output -  " + output);
+            break;
+          case "opCodeRequires__JumpIf_P1isNotZero":
+            if (p1 > 0) nextInstructionStartPoint = p2;
+            break;
+          case "opCodeRequires__JumpIf_P1isZero":
+            if (p1 == 0) nextInstructionStartPoint = p2;
+            break;
+          case "ifP1lessThanP2storeOneElseZeroAtP3":
+            if (p1 < p2) IntCode[p3] = 1;
+            else IntCode[p3] = 0;
+            break;
+          case "ifP1equalsP2storeOneElseZeroAtP3":
+            if (p1 == p2) IntCode[p3] = 1;
+            else IntCode[p3] = 0;
+            break;
+          default:
+            Console.WriteLine("Something wrong !");
+            break;
         }
       }
       return output.ToString();
@@ -78,63 +84,33 @@ namespace Advent3
 
       int getNextInstructionDigitsQuantity()
       {
-        return (operationCode == 3 || operationCode == 4) ? 2
-              : ((operationCode == 5 || operationCode == 6) ? 3 : Math.Min(4, IntCode.Count - nextInstructionStartPoint));
-      }
-
-      bool opCodeRequiresInputAtPosition()
-      {
-        return operationCode == 3 && instructionParams.Count > 1;
-      }
-
-      bool opCodeRequiresDisclosingOutput()
-      {
-        return operationCode == 4 && instructionParams.Count > 1 && IntCode.Count > instructionParams[1];
-      }
-
-      bool opCodeRequiresToJumpIf_P1isNotZero()
-      {
-        return operationCode == 5 && instructionParams.Count > 2 && p1 > 0;
-      }
-
-      bool opCodeRequiresToJumpIf_P1isZero()
-      {
-        return operationCode == 6 && instructionParams.Count > 2 && p1 == 0;
-      }
-
-      bool opCodeRequiresInputAtP3sumOfP1nP2()
-      {
-        return operationCode == 1;
-      }
-
-      bool opCodeRequiresInputAtP3productOfP1nP2()
-      {
-        return operationCode == 2;
+        return (operationCode == 3 || operationCode == 4)
+            ? 2 : ((operationCode == 5 || operationCode == 6)
+            ? 3 : Math.Min(4, IntCode.Count - nextInstructionStartPoint));
       }
 
       int getParameterOneDependingOnMode()
       {
-        return nextInstruction.Substring(2, 1) == "1" ? instructionParams[1] : IntCode[instructionParams[1]];
+        string p1mode = nextInstruction.Substring(2, 1);
+        return p1mode == "1" ? instructionParams[1] : IntCode[instructionParams[1]];
       }
 
       int getParameterTwoDependingOnMode()
       {
-        return nextInstruction.Substring(1, 1) == "1" ? instructionParams[2] : IntCode[instructionParams[2]];
+        string p2mode = nextInstruction.Substring(1, 1);
+        return p2mode == "1" ? instructionParams[2] : IntCode[instructionParams[2]];
       }
-
-      void ifP1lessThanP2storeOneOtherwiseZeroAtPositionThree()
-      {
-        if (p1 < p2) IntCode[p3] = 1;
-        else IntCode[p3] = 0;
-      }
-
-      void ifP1equalsP2storeOneOtherwiseZeroAtPositionThree()
-      {
-        if (p1 == p2) IntCode[p3] = 1;
-        else IntCode[p3] = 0;
-      }
-
     }
 
+    List<string> OpCodes = new List<string> {
+      "opCodeRequires__InputAtP3sumOfP1nP2",
+      "opCodeRequires__InputAtP3productOfP1nP2",
+      "opCodeRequires__InputAtPosition",
+      "opCodeRequires__DisclosingOutput",
+      "opCodeRequires__JumpIf_P1isNotZero",
+      "opCodeRequires__JumpIf_P1isZero",
+      "ifP1lessThanP2storeOneElseZeroAtP3",
+      "ifP1equalsP2storeOneElseZeroAtP3"
+    };
   }
 }
